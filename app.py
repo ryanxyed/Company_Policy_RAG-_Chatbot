@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-import speech_recognition as sr
 from src.data_loader import load_all_documents
 from src.vectorstore import ChromaVectorStore
 from src.search import RAGSearch
@@ -12,25 +11,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 st.set_page_config(page_title="Company Portal", page_icon="📂", layout="centered")
 
 page = st.sidebar.radio("Navigate", ["📂 Upload Portal", "📚 RAG Q&A"])
-
-# ─────────────────────────────────────────────
-# Voice Recognition Function
-# ─────────────────────────────────────────────
-def recognize_voice():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎤 Listening... Please speak now!")
-        recognizer.adjust_for_ambient_noise(source, duration=1)
-        try:
-            audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
-            text = recognizer.recognize_google(audio)
-            return text
-        except sr.WaitTimeoutError:
-            return "ERROR: No speech detected. Please try again."
-        except sr.UnknownValueError:
-            return "ERROR: Could not understand audio. Please try again."
-        except sr.RequestError:
-            return "ERROR: Google Speech API unavailable. Check internet connection."
 
 # ─────────────────────────────────────────────
 # Upload Portal Page
@@ -100,43 +80,25 @@ elif page == "📚 RAG Q&A":
     # ── Initialize session state ─────────────
     if "query" not in st.session_state:
         st.session_state["query"] = ""
-    if "voice_triggered" not in st.session_state:
-        st.session_state["voice_triggered"] = False
     if "last_searched" not in st.session_state:
         st.session_state["last_searched"] = ""
     if "answer" not in st.session_state:
         st.session_state["answer"] = ""
 
-    # ── Query Input Row ──────────────────────
+    # ── Query Input ──────────────────────────
     st.subheader("Ask a Question")
-    col1, col2 = st.columns([5, 1])
 
-    with col1:
-        # st.text_input triggers rerun on Enter automatically ✅
-        query = st.text_input(
-            "Type your question or use 🎤 to speak:",
-            value=st.session_state["query"],
-        )
-        st.session_state["query"] = query
+    query = st.text_input(
+        "Type your question:",
+        value=st.session_state["query"],
+    )
+    st.session_state["query"] = query
 
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🗣️"):
-            with st.spinner("Listening..."):
-                voice_text = recognize_voice()
-            if voice_text.startswith("ERROR"):
-                st.error(voice_text)
-            else:
-                st.session_state["query"] = voice_text
-                st.session_state["voice_triggered"] = True
-                st.rerun()
-
-    # ── Auto search on Enter or voice trigger ─
+    # ── Auto search ──────────────────────────
     final_query = st.session_state["query"]
 
     if final_query.strip() != "" and final_query != st.session_state["last_searched"]:
         st.session_state["last_searched"] = final_query
-        st.session_state["voice_triggered"] = False
         with st.spinner("Searching and summarizing..."):
             st.session_state["answer"] = rag_search.search_and_summarize(final_query, top_k=top_k)
 
