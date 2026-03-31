@@ -1,6 +1,7 @@
 import os
 from src.vectorstore import ChromaVectorStore
 from langchain_cohere import ChatCohere
+import streamlit as st
 
 class RAGSearch:
     def __init__(self, llm_model: str = "command-r-08-2024"):
@@ -8,7 +9,7 @@ class RAGSearch:
         self.llm_model = llm_model
 
         self.llm = ChatCohere(
-            cohere_api_key="7MI4ozR0ZMC5YQSDSfUSeUjTxw2sZMsh1XGQM7tD",
+            cohere_api_key = st.secrets["COHERE_API_KEY"],
             model=llm_model,
             temperature=0.1
         )
