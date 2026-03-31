@@ -1,0 +1,11 @@
+SpeechRecognition
+streamlit
+pathlib
+typing
+langchain-community
+langchain-text-splitters
+scikit-learn
+chromadb
+langchain-cohere
+pyaudio
+
