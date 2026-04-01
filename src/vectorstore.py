@@ -14,14 +14,7 @@ class ChromaVectorStore:
 
     def build_from_documents(self, documents: List[Any]):
         chunks = self.emb_pipe.chunk_documents(documents)
-        #texts = [chunk.page_content for chunk in chunks]
-        #embeddings = self.vectorizer.fit_transform(texts).toarray()
-        texts = [chunk.page_content.strip() for chunk in chunks if chunk.page_content.strip()]
-
-# 🚨 Remove empty / invalid text
-        if not texts:
-            raise ValueError("No valid text found in documents!")
-
+        texts = [chunk.page_content for chunk in chunks]
         embeddings = self.vectorizer.fit_transform(texts).toarray()
         self.fitted = True
 
