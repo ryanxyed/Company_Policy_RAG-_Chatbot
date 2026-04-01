@@ -1,16 +1,12 @@
 import streamlit as st
 import os
-import tempfile
 from src.data_loader import load_all_documents
 from src.vectorstore import ChromaVectorStore
 from src.search import RAGSearch
 from src.chunking import CHUNK_SIZE, CHUNK_OVERLAP
 
-# ✅ Use temp directory (cloud-safe)
-if "temp_dir" not in st.session_state:
-    st.session_state["temp_dir"] = tempfile.mkdtemp()
-
-UPLOAD_DIR = st.session_state["temp_dir"]
+UPLOAD_DIR = "data"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 st.set_page_config(page_title="Company Portal", page_icon="📂", layout="centered")
 
@@ -31,7 +27,7 @@ if page == "📂 Upload Portal":
     st.markdown('<div class="upload-card">', unsafe_allow_html=True)
     st.image("https://cdn-icons-png.flaticon.com/512/109/109612.png", width=90)
     st.markdown("<h1>Upload Your Files</h1>", unsafe_allow_html=True)
-    st.markdown("<p>Drag & drop or browse to select files. They will be saved securely during this session.</p>",
+    st.markdown("<p>Drag & drop or browse to select files. They will be saved securely in the <b>data</b> folder.</p>",
                 unsafe_allow_html=True)
 
     uploaded_files = st.file_uploader(
@@ -51,11 +47,8 @@ if page == "📂 Upload Portal":
 
         st.subheader("📜 Uploaded Files")
         st.markdown('<div class="uploaded-list">', unsafe_allow_html=True)
-
-        if os.path.exists(UPLOAD_DIR):
-            for file in os.listdir(UPLOAD_DIR):
-                st.write(f"- {file}")
-
+        for file in os.listdir(UPLOAD_DIR):
+            st.write(f"- {file}")
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.info("No files uploaded yet. Start by selecting a file above.")
@@ -64,15 +57,14 @@ if page == "📂 Upload Portal":
 # RAG Q&A Page
 # ─────────────────────────────────────────────
 elif page == "📚 RAG Q&A":
-
     @st.cache_resource
-    def initialize_rag(upload_dir):
+    def initialize_rag():
         rag = RAGSearch()
-        docs = load_all_documents(upload_dir)  # ✅ use temp dir
+        docs = load_all_documents("data")
         rag.vectorstore.build_from_documents(docs)
         return rag
 
-    rag_search = initialize_rag(UPLOAD_DIR)
+    rag_search = initialize_rag()
 
     st.title("📚 Company Policy RAG Chatbot")
 
@@ -83,7 +75,6 @@ elif page == "📚 RAG Q&A":
     st.sidebar.text(f"Chunk Overlap : {CHUNK_OVERLAP}")
     st.sidebar.text(f"Embedding : TF-IDF")
     st.sidebar.text(f"Vector DB : ChromaDB")
-
     top_k = st.sidebar.slider("Number of results", 1, 10, 3)
 
     # ── Initialize session state ─────────────
